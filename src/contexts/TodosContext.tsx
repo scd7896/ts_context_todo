@@ -1,10 +1,16 @@
 import React, { useContext } from 'react';
 import {createContext, Dispatch, useReducer} from 'react'
+import { scryRenderedComponentsWithType } from 'react-dom/test-utils';
 
+export type SemiTodo = {
+    id : number;
+    text : string;
+}
 export type Todo = {
     id :number;
     text : string;
     done : boolean;
+    list : SemiTodo[];
 };
 
 type TodoState = Todo[];
@@ -15,6 +21,7 @@ type Action =
     | {type : "CREATE"; text: string}
     | {type : "TOGGLE"; id : number}
     | {type : "REMOVE"; id : number}
+    | {type : "SEMI_ADD"; id: number, text : string}
 
 type TodosDispatch = Dispatch<Action>;
 const TodoDispatchContext = createContext<TodosDispatch | undefined>(undefined);
@@ -26,12 +33,20 @@ function todoReducer(state : TodoState, action : Action) : TodoState{
             return state.concat({
                 id : nextId,
                 text : action.text,
-                done : false
+                done : false,
+                list : []
             })
         case "TOGGLE" :
             return state.map(todo=> todo.id === action.id? {...todo, done : !todo.done} : todo)
         case "REMOVE" :
             return state.filter(todo => todo.id !== action.id)
+        case "SEMI_ADD" :
+            const index = state.findIndex((el)=> el.id === action.id) 
+            const size = state[index].list.length;
+            const data = {id : size+1, text : action.text}
+            state[index].list.concat(data)
+            return [...state];
+            
         default :
             return {...state}
     }
@@ -54,17 +69,20 @@ export function TodosContextProvider({children} : {children : React.ReactNode}){
         {
             id: 1,
             text : 'context공부',
-            done : false
+            done : false,
+            list : []
         },
         {
             id: 2,
             text : '라라벨',
-            done : true
+            done : true,
+            list : []
         },
         {
             id: 3,
             text : 'rx',
-            done : false
+            done : false,
+            list : []
         }
     ])
     return (
